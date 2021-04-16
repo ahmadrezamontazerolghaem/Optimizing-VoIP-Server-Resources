@@ -1,0 +1,237 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Conditions": {
+    "BlankAmi": { "Fn::Equals": [ { "Ref": "Ami" }, "" ] },
+    "BlankCertificate": { "Fn::Equals": [ {  "Ref": "Certificate" }, "" ] },
+    "BlankDockerImageApi": { "Fn::Equals": [ { "Ref": "DockerImageApi" }, "" ] },
+    "BlankKey": { "Fn::Equals": [ { "Ref": "Key" }, "" ] },
+    "BlankRegistryHost": { "Fn::Equals": [ { "Ref": "RegistryHost" }, "" ] },
+    "Development": { "Fn::Equals": [ { "Ref": "Development" }, "Yes" ] },
+    "Encryption": { "Fn::Equals": [ { "Ref": "Encryption" }, "Yes" ] }
+  },
+  "Mappings": { 
+    "RegionConfig": {
+      "us-east-1": { "Ami": "ami-cb2305a1" },
+      "us-west-1": { "Ami": "ami-bdafdbdd" },
+      "us-west-2": { "Ami": "ami-ec75908c" },
+      "eu-west-1": { "Ami": "ami-13f84d60" },
+      "eu-central-1": { "Ami": "ami-c3253caf" },
+      "ap-northeast-1": { "Ami": "ami-e9724c87" },
+      "ap-southeast-1": { "Ami": "ami-5f31fd3c" },
+      "ap-southeast-2": { "Ami": "ami-83af8ae0" }
+    }
+  },
+  "Outputs": {
+    "AwsRegion": {
+      "Condition": "Development",
+      "Value": { "Ref": "AWS::Region" }
+    },
+    "AwsAccess": {
+      "Condition": "Development",
+      "Value": { "Ref": "KernelAccess" }
+    }
+    "AwsSecret": {
+      "Condition": "Development",
+      "Value": { "Fn::GetAtt": [ "KernelAccess", "SecretAccessKey" ] }
+    },
+    "Cluster": {
+      "Condition": "Development",
+      "Value": { "Ref": "Cluster" }
+    },
+    "CustomTopic": {
+      "Condition": "Development",
+      "Value": { "Fn::GetAtt": [ "CustomTopic", "Arn" ] }
+    },
+    "Dashboard": {
+      "Value": { "Fn::GetAtt": [ "Balancer", "DNSName" ] }
+    },
+    "DockerImageApi": {
+      "Condition": "Development",
+      "Value": { "Fn::If": [ "BlankDockerImageApi",
+        { "Fn::Join": [ ":", [ "convox/api", { "Ref": "Version" } ] ] },
+        { "Ref": "DockerImageApi" }
+      ] }
+    },
+    "DynamoBuilds": {
+      "Condition": "Development",
+      "Value": { "Ref": "DynamoBuilds" }
+    },
+    "DynamoReleases": {
+      "Condition": "Development",
+      "Value": { "Ref": "DynamoReleases" }
+    },
+    "EncryptionKey": {
+      "Condition": "Development",
+      "Value": { "Fn::If": [ "Encryption",
+        { "Ref": "EncryptionKey" },
+        { "Ref": "AWS::NoValue" }
+      ] }
+    },
+    "Kinesis": {
+      "Value": { "Ref": "Kinesis" }
+    },
+    "LogGroup": {
+      "Value": { "Ref": "LogGroup" }
+    },
+    "NotificationHost": {
+      "Condition": "Development",
+      "Value": { "Fn::GetAtt": [ "Balancer", "DNSName" ] }
+    },
+    "NotificationTopic": {
+      "Condition": "Development",
+      "Value" : { "Ref": "NotificationTopic" }
+		},
+    "Password": {
+      "Condition": "Development",
+      "Value": { "Ref": "Password" }
+    },
+    "Rack": {
+      "Condition": "Development",
+      "Value": { "Ref": "AWS::StackName" }
+    },
+    "RegistryHost": {
+      "Condition": "Development",
+      "Value": { "Fn::If": [ "BlankRegistryHost",
+        { "Fn::Join": [ ":", [ { "Fn::GetAtt": [ "Balancer", "DNSName" ] }, "5000" ] ] },
+        { "Fn::Join": [ ":", [ { "Ref": "RegistryHost" }, { "Ref": "RegistryPort" } ] ] }
+      ] }
+    },
+    "Release": {
+      "Condition": "Development",
+      "Value": { "Ref": "Version" }
+    },
+    "Subnets": {
+      "Condition": "Development",
+      "Value": { "Fn::Join": [ ",", [ { "Ref": "Subnet0" }, { "Ref": "Subnet1" }, { "Ref": "Subnet2" } ] ] }
+    },
+    "StackId": {
+      "Condition": "Development",
+      "Value": { "Ref": "AWS::StackId" }
+    },
+    "Vpc": {
+      "Condition": "Development",
+      "Value": { "Ref": "Vpc" }
+    }
+  },
+  "Parameters": {
+    "Ami": {
+      "Type": "String",
+      "Description": "Amazon Machine Image: http://docs.aws.amazon.com/AmazonECS/latest/developerguide/launch_container_instance.html",
+      "Default": ""
+    },
+    "ClientId": {
+      "Type": "String",
+      "Description": "Anonymous identifier",
+      "Default": "dev@convox.com"
+    },
+    "Certificate": {
+      "Type": "String",
+      "Description": "SSL certificate",
+      "Default": ""
+    },
+    "Development": {
+      "Type": "String",
+      "Description": "Development mode",
+      "Default": "No",
+      "AllowedValues": [ "Yes", "No" ]
+    },
+    "DockerImageApi": {
+      "Type": "String",
+      "Description": "Image to use for the api container. Overrides current Version.",
+      "Default": ""
+    },
+    "DockerImageApp": {
+      "Type": "String",
+      "Description": "Deprecated",
+      "Default": ""
+    },
+    "DockerImageBuild": {
+      "Type": "String",
+      "Description": "Deprecated",
+      "Default": ""
+    },
+    "DockerImageService": {
+      "Type": "String",
+      "Description": "Deprecated",
+      "Default": ""
+    },
+    "Encryption": {
+      "Type": "String",
+      "Description": "Encrypt secrets with KMS",
+      "Default": "Yes",
+      "AllowedValues": [ "Yes", "No" ]
+    },
+    "InstanceCount": {
+      "Default": "3",
+      "Description": "The number of instances in the runtime cluster",
+      "Type": "Number"
+    },
+    "InstanceType": {
+      "Default": "t2.small",
+      "Description": "The type of the instances in the runtime cluster",
+      "Type": "String"
+    },
+    "Key": {
+      "Default": "",
+      "Description": "SSH key name for access to cluster instances",
+      "Type": "String"
+    },
+    "Password": {
+      "Description": "(REQUIRED) API HTTP password",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "50"
+    },
+    "RegistryHost": {
+      "Type": "String",
+      "Description": "Registry host",
+      "Default": ""
+    },
+    "RegistryPort": {
+      "Type": "String",
+      "Description": "Registry port",
+      "Default": ""
+    },
+    "Subnet0CIDR": {
+      "Default": "10.0.1.0/24",
+      "Description": "Subnet 0 CIDR Block",
+      "Type": "String"
+    },
+    "Subnet1CIDR": {
+      "Default": "10.0.2.0/24",
+      "Description": "Subnet 0 CIDR Block",
+      "Type": "String"
+    },
+    "Subnet2CIDR": {
+      "Default": "10.0.3.0/24",
+      "Description": "Subnet 0 CIDR Block",
+      "Type": "String"
+    },
+    "Version": {
+      "Description": "(REQUIRED) Convox release version",
+      "MinLength" : "1",
+      "Type": "String"
+    },
+    "VolumeSize": {
+      "Type": "Number",
+      "Description": "Default disk size in GB",
+      "Default": "50"
+    },
+    "VPCCIDR": {
+      "Default": "10.0.0.0/16",
+      "Description": "VPC CIDR Block",
+      "Type": "String"
+    },
+    "Tenancy": {
+      "Type": "String",
+      "Description": "Dedicated Hardware",
+      "Default": "default",
+      "AllowedValues": [ "default", "dedicated" ]
+    }
+  },
+  "Resources": {
+    "EncryptionKey": {
+      "Condition": "Encryption",
+      "DependsOn": "CustomTopic",
+      "Type": "Custom::KMSKey",
+      "P
